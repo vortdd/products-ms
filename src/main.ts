@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { envs } from './config';
@@ -7,7 +7,15 @@ import { envs } from './config';
 async function bootstrap() {
   const logger = new Logger('Main');
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+    AppModule,
+    {
+      transport: Transport.TCP,
+      options: {
+        port: envs.port,
+      },
+    },
+  );
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -16,17 +24,7 @@ async function bootstrap() {
     }),
   );
 
-  const config = new DocumentBuilder()
-    .setTitle('Products')
-    .setDescription('The products API description')
-    .setVersion('1.0')
-    .build();
-  // .addTag('cats')
-  // .build();
-  const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, documentFactory);
-
-  await app.listen(envs.port);
-  logger.log(`App running on port ${envs.port}`);
+  await app.listen();
+  logger.log(`Products Microservice running on port ${envs.port}`);
 }
 bootstrap();
